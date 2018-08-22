@@ -1,0 +1,43 @@
+from typing import Sequence
+
+import requests
+
+from requests.auth import HTTPBasicAuth
+
+from .mapping import FeedItem
+
+APIError = type('APIError', (Exception,), {})
+
+APIInvalidAuthError = type('APIInvalidAuthError', (APIError,), {})
+APIBadRequest = type('APIBadRequest', (APIError,), {})
+APINotFoundError = type('APINotFoundError', (APIError,), {})
+
+
+def _determine_error_on_code(code):
+    return {
+        requests.codes.not_found: APINotFoundError,
+        requests.codes.bad_request: APIBadRequest,
+        requests.codes.unauthorized: APIInvalidAuthError,
+    }.get(code, APIError)
+
+
+class MinifluxAPIManager:
+
+    def __init__(self, host: str, login: str, passwd: str):
+        self._host: str = host
+        self._auth: HTTPBasicAuth = HTTPBasicAuth(login, passwd)
+
+    def get_unread(self) -> Sequence[FeedItem]:
+
+        result = requests.get(
+            '{}/v1/entries'.format(self._host),
+            params={'status': 'unread'},
+            auth=self._auth)
+
+        if result.status_code != requests.codes.ok:
+            raise _determine_error_on_code(result.status_code)
+
+        return [
+            FeedItem.parse(item)
+            for item in result.json()['entries']
+        ]
