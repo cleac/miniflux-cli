@@ -1,5 +1,3 @@
-from typing import Sequence
-
 from ._mapping_meta import DClass
 
 

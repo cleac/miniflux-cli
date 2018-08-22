@@ -2,3 +2,6 @@
 __pycache__/*
 
 .env/*
+
+# Ignore container used for linting and building things up
+.vagga

@@ -5,9 +5,8 @@ from miniflux.request import (
     APIInvalidAuthError,
     APINotFoundError,
 )
-from miniflux.tui import (
-    render_feed_list,
-)
+from miniflux.app import App
+from .tui import FeedContext
 
 
 def main():
@@ -18,7 +17,7 @@ def main():
     api = MinifluxAPIManager(url, login, password)
 
     try:
-        feed_entries = api.get_unread()
+        api.get_unread()
     except APIInvalidAuthError:
         print('Wrong login or/and password was provided')
         exit(1)
@@ -26,7 +25,16 @@ def main():
         print('Could not get feed from server. Check the url and the server')
         exit(2)
 
-    print('\n'.join(render_feed_list(feed_entries, 20)))
+    app = App()
+
+    app.register_src('miniflux_api', api)
+
+    app.register_context('feed_view', FeedContext)
+
+    app.set_default('feed_view')
+
+    with app:
+        app.loop()
 
 
 if __name__ == '__main__':

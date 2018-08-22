@@ -1,0 +1,29 @@
+containers:
+  miniflux-term:
+    setup:
+      - !Alpine v3.8
+      - !PipConfig { dependencies: true }
+      - !Py3Requirements requirements.txt
+
+  flake8:
+    setup:
+      - !Alpine v3.8
+      - !PipConfig { dependencies: true }
+      - !Py3Install
+        - flake8==3.5.0
+commands:
+  flake8: !Command
+    container: flake8
+    accepts_arguments: true
+    description: Run flake8
+    run: [flake8]
+
+  run: !Command
+    container: miniflux-term
+    accepts_arguments: true
+    description: Run app for testing
+    run:
+      - python3
+      - -m
+      - miniflux
+
