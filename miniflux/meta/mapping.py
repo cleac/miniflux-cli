@@ -42,9 +42,13 @@ class DClass(metaclass=MetaDClass):
             cls._storage[obj['id']] = cls(id=obj['id'])
         return cls._storage[obj['id']]
 
+    @property
+    def dict(self):
+        return {field: getattr(self, field)
+                for field in self._registered_fields}
+
     def __repr__(self):
         return '<{0.__class__.__name__} {1}>'.format(
             self,
             ' '.join('{}={}'.format(key, getattr(self, key))
                      for key in self._registered_fields))
-

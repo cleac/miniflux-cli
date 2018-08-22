@@ -1,44 +1,37 @@
 import curses
 import curses.textpad
 import os
-import subprocess
+
 from warnings import warn
 
 from typing import Sequence
 
 from .mapping import FeedItem, Feed
-
-
-def _elipsize(text: str, expect_width: int) -> str:
-    if len(text) > expect_width:
-        return text[:expect_width-3] + '...'
-    if len(text) < expect_width:
-        return text + ' ' * (expect_width - len(text))
-    return text
+from .meta.tui import elipsize
 
 
 def render_feed_list(feed_list: Sequence[FeedItem], display_width):
     if display_width > 180:
         return [
             '{}  {}  {}\n'.format(
-                _elipsize(Feed._storage[feed_item.feed_id].title, 15),
-                _elipsize(feed_item.title, 60),
-                _elipsize(feed_item.url, display_width - 80),
+                elipsize(Feed._storage[feed_item.feed_id].title, 15),
+                elipsize(feed_item.title, 60),
+                elipsize(feed_item.url, display_width - 80),
             ) for feed_item in feed_list
         ]
     elif display_width > 30:
         return [
             '{}  {}\n'.format(
-                _elipsize(
+                elipsize(
                     Feed._storage[feed_item.feed_id].title,
                     round(display_width / 3) - 2
                 ),
-                _elipsize(feed_item.title, round(2 * display_width / 3) - 2),
+                elipsize(feed_item.title, round(2 * display_width / 3) - 2),
             ) for feed_item in feed_list
         ]
     return [
         '{}\n'.format(
-            _elipsize(feed_item.title, display_width),
+            elipsize(feed_item.title, display_width),
         ) for feed_item in feed_list
     ]
 

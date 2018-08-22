@@ -6,7 +6,7 @@ from miniflux.request import (
     APINotFoundError,
 )
 from miniflux.app import App
-from .tui import FeedContext
+from .contexts.feed import FeedContext
 
 
 def main():

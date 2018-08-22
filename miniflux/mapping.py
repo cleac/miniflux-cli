@@ -1,4 +1,4 @@
-from ._mapping_meta import DClass
+from .meta.mapping import DClass
 
 
 class FeedItem(DClass):

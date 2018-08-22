@@ -2,13 +2,8 @@ import curses
 import time
 
 
-class App:
-
-    def __init__(self):
-        self._contexts = {}
-        self._src = {}
-        self._default_context = None
-        self._exit = False
+class InitCursesMixin:
+    """Mixin class that initializes curses to display things"""
 
     def __enter__(self):
         self._scr = curses.initscr()
@@ -20,9 +15,23 @@ class App:
         self._scr.keypad(True)
         self._scr.nodelay(True)
 
-        self._init_contexts()
-
         return self
+
+    def __exit__(self, t, s, d):
+        self._scr.nodelay(False)
+        self._scr.keypad(False)
+
+        curses.nocbreak()
+        curses.echo()
+        curses.endwin()
+
+
+class ContextHandlerMixin:
+
+    def __init__(self):
+        super().__init__()
+        self._contexts = {}
+        self._default_context = None
 
     def _init_contexts(self):
         self._contexts = {
@@ -37,6 +46,21 @@ class App:
             raise RuntimeError(f'Acquired non-registered context {name}')
         self._default_context = name
 
+    def get_default_context(self):
+        if self._default_context:
+            default = self._default_context
+        else:
+            # Kinda peek random one
+            default = next(self._contexts.keys())
+        return self._contexts[default]
+
+
+class SRCHandlerMixin:
+
+    def __init__(self):
+        super().__init__()
+        self._src = {}
+
     def register_src(self, name, src):
         self._src[name] = src
 
@@ -45,13 +69,19 @@ class App:
             raise RuntimeError(f'Acquired non-registered src {name}')
         return self._src[name]
 
+
+class App(InitCursesMixin, ContextHandlerMixin, SRCHandlerMixin):
+
+    def __init__(self):
+        super().__init__()
+        self._exit = False
+
+    def __enter__(self):
+        self._init_contexts()
+        return super().__enter__()
+
     def loop(self):
-        if self._default_context:
-            default = self._default_context
-        else:
-            # Kinda peek random one
-            default = next(self._contexts.keys())
-        current_context = self._contexts[default]
+        current_context = self.get_default_context()
 
         while True:
             current_context.view(self._scr)
@@ -67,18 +97,14 @@ class App:
 
             time.sleep(.1)
 
+    def exit(self):
+        self._exit = True
+
     def handle_keypress(self, key: int):
         try:
             if chr(key) == 'q':
-                self._exit = True
+                self.exit()
                 return True
         except Exception:
             pass
         return False
-
-    def __exit__(self, t, s, d):
-        curses.nocbreak()
-        self._scr.keypad(False)
-        curses.echo()
-        curses.endwin()
-        self._scr.nodelay(False)
