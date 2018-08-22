@@ -1,8 +1,11 @@
 import json
+import os
 
 from getpass import getpass
 
 from miniflux.meta.mapping import DClass
+
+CONFIG_DIR = os.path.join(os.getenv('HOME') + '/.config')
 
 
 class Config(DClass):
@@ -19,7 +22,7 @@ class Config(DClass):
     @classmethod
     def load_config(cls):
         try:
-            with open('miniflux.json', 'r') as f:
+            with open(CONFIG_DIR + 'miniflux.json', 'r') as f:
                 return cls(**json.loads(f.read()))
         except FileNotFoundError:
             return cls()
