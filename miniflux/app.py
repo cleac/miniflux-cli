@@ -70,11 +70,40 @@ class SRCHandlerMixin:
         return self._src[name]
 
 
+class Pause:
+
+    def __init__(self, app):
+        self.app = app
+
+    def __enter__(self):
+        self.app._pause = True
+
+        self.app._scr.nodelay(False)
+        self.app._scr.keypad(False)
+
+        curses.nocbreak()
+        curses.echo()
+        curses.endwin()
+
+    def __exit__(self, t, s, d):
+        self.app._pause = False
+
+        self.app._scr = curses.initscr()
+
+        curses.noecho()
+        curses.cbreak()
+        curses.curs_set(0)
+
+        self.app._scr.keypad(True)
+        self.app._scr.nodelay(True)
+
+
 class App(InitCursesMixin, ContextHandlerMixin, SRCHandlerMixin):
 
     def __init__(self):
         super().__init__()
         self._exit = False
+        self._pause = False
 
     def __enter__(self):
         self._init_contexts()
@@ -84,6 +113,10 @@ class App(InitCursesMixin, ContextHandlerMixin, SRCHandlerMixin):
         current_context = self.get_default_context()
 
         while True:
+            if self._pause:
+                time.sleep(.5)
+                continue
+
             current_context.view(self._scr)
 
             key = self._scr.getch()
@@ -95,7 +128,7 @@ class App(InitCursesMixin, ContextHandlerMixin, SRCHandlerMixin):
             if self._exit:
                 break
 
-            time.sleep(.1)
+            time.sleep(.05)
 
     def exit(self):
         self._exit = True

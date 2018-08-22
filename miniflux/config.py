@@ -5,7 +5,7 @@ from getpass import getpass
 
 from miniflux.meta.mapping import DClass
 
-CONFIG_DIR = os.path.join(os.getenv('HOME') + '/.config')
+CONFIG_DIR = os.path.join(os.getenv('HOME') + '/.config/')
 
 
 class Config(DClass):
@@ -17,6 +17,7 @@ class Config(DClass):
     remember_login: bool
     remember_password: bool
 
+    open_command: str = 'xdg-open'
     alternative_open_command: str
 
     @classmethod
@@ -58,14 +59,14 @@ class Config(DClass):
 
         # Cleanup "remember" items
         if result['login'] and result['remember_login']:
-            del result['remember_login']
+            result['remember_login'] = None
         if result['password'] and result['remember_password']:
-            del result['remember_password']
+            result['remember_password'] = None
 
         if result['remember_login'] is False and result['login']:
-            del result['login']
+            result['login'] = None
         if result['remember_password'] is False and result['password']:
-            del result['password']
+            result['password'] = None
 
         # Cleanup empty keys
         remove_keys = set()
@@ -76,5 +77,5 @@ class Config(DClass):
             del result[key]
 
         # Write to file and dumps
-        with open('miniflux.json', 'w') as f:
+        with open(CONFIG_DIR + 'miniflux.json', 'w') as f:
             f.write(json.dumps(result, ensure_ascii=False))

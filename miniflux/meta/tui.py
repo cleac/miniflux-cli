@@ -22,9 +22,10 @@ class ListView:
 
         screen.clear()
 
-        for i, feed_item in enumerate(self.data_source(
-            self._first_visible,
-            height + self._first_visible-1,
+        for i, feed_item in enumerate(self.render_function(
+            self.data_source()[
+                self._first_visible:
+                height + self._first_visible-1],
             width
         )):
             if i == self._selected - self._first_visible:
@@ -46,7 +47,13 @@ class ListView:
         while self._first_visible > self._selected:
             self._first_visible -= 1
 
-    def data_source(self, start_index, end_index, width):
+    def get_current(self):
+        return self.data_source()[self._selected]
+
+    def render_function(self, items, width):
+        raise NotImplementedError
+
+    def data_source(self):
         raise NotImplementedError
 
     def open(self, item):
@@ -63,6 +70,6 @@ class ListView:
             key == curses.KEY_ENTER or key == 10 or
             key == 13 or chr(key) == 'o'
         ):
-            self.open(self.feed_list[self._selected])
+            self.open(self.get_current())
             return True
         return False

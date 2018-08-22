@@ -14,7 +14,7 @@ class MetaDClass(type):
                     processed_fields.add(name)
 
             for name in slf._registered_fields - processed_fields:
-                setattr(slf, name, None)
+                setattr(slf, name, slf._defaults[name])
 
             if initmethod:
                 initmethod()
@@ -28,6 +28,11 @@ class MetaDClass(type):
         for item in data.get('__annotations__', {}).keys():
             registered_fields.add(item)
         data['_registered_fields'] = registered_fields
+
+        data['_defaults'] = {
+            field: data.get(field, None)
+            for field in registered_fields
+        }
 
         data['_storage'] = {}
 

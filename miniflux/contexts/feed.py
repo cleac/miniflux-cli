@@ -9,17 +9,9 @@ from miniflux.meta.tui import elipsize, ListView
 
 
 def render_feed_list(feed_list: Sequence[FeedItem], display_width):
-    if display_width > 180:
+    if display_width > 30:
         return [
-            '{}  {}  {}\n'.format(
-                elipsize(Feed._storage[feed_item.feed_id].title, 15),
-                elipsize(feed_item.title, 60),
-                elipsize(feed_item.url, display_width - 80),
-            ) for feed_item in feed_list
-        ]
-    elif display_width > 30:
-        return [
-            '{}  {}\n'.format(
+            ' {}  {}\n'.format(
                 elipsize(
                     Feed._storage[feed_item.feed_id].title,
                     round(display_width / 3) - 2
@@ -39,21 +31,41 @@ class FeedContext(ListView):
     def __init__(self, app):
         super().__init__(app)
         self._api = app.acquire_src('miniflux_api')
+        self.config = app.acquire_src('config')
+        self.pause = app.acquire_src('pause')
+
         self.feed_list = self._api.get_unread()
 
         self._run_editor = False
 
-    def data_source(self, start_index, end_index, width):
-        return render_feed_list(self.feed_list[start_index:end_index], width)
+    def render_function(self, data, width):
+        return render_feed_list(data, width)
+
+    def data_source(self):
+        return self.feed_list
 
     def open(self, feed_item):
-        try:
-            os.spawnvp.call(os.P_NOWAIT, 'xdg-open', [feed_item.url])
-        except Exception:
-            warn('You are runnig in container or don\'t have a command')
-
+        with self.pause:
+            try:
+                os.system(f'{self.config.open_command} {feed_item.url}')
+            except Exception:
+                warn('Command not found')
         self._api.mark_read(feed_item.id)
         self.feed_list = self._api.get_unread()
+
+    def open_alternative(self, feed_item):
+        with self.pause:
+            try:
+                os.system(
+                    f'{self.config.alternative_open_command} {feed_item.url}')
+            except Exception:
+                warn('Command not found')
+        self.feed_list = self._api.get_unread()
+
+    def mark_read(self, feed_item):
+        self._api.mark_read(feed_item.id)
+        self.feed_list = self._api.get_unread()
+        self.move_up(1)
 
     def handle_keypress(self, key):
         if super().handle_keypress(key):
@@ -63,6 +75,11 @@ class FeedContext(ListView):
             if chr(key) == 'r':
                 self.feed_list = self._api.get_unread()
                 return True
+            elif chr(key) == 'd':
+                self.mark_read(self.get_current())
+                return True
+            elif chr(key) == 'O':
+                self.open_alternative(self.get_current())
         except Exception:
             pass
 
