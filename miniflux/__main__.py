@@ -7,23 +7,28 @@ from miniflux.request import (
 )
 from miniflux.app import App
 from .contexts.feed import FeedContext
+from .config import Config
 
 
 def main():
-    url = input('Enter url: ')
-    login = input('Enter login: ')
-    password = getpass('Enter password: ')
+    fail_connection = True
+    while fail_connection:
+        config = Config.load_config() \
+            .fill_keys()
 
-    api = MinifluxAPIManager(url, login, password)
+        api = MinifluxAPIManager(config)
 
-    try:
-        api.get_unread()
-    except APIInvalidAuthError:
-        print('Wrong login or/and password was provided')
-        exit(1)
-    except APINotFoundError:
-        print('Could not get feed from server. Check the url and the server')
-        exit(2)
+        try:
+            api.get_unread()
+        except APIInvalidAuthError:
+            print('Wrong login or/and password was provided')
+            exit(1)
+        except APINotFoundError:
+            print('Could not get feed from server. '
+                  'Check the url, internet connection and the server')
+            exit(2)
+
+        fail_connection = False
 
     app = App()
 

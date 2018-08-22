@@ -23,9 +23,10 @@ def _determine_error_on_code(code):
 
 class MinifluxAPIManager:
 
-    def __init__(self, host: str, login: str, passwd: str):
-        self._host: str = host
-        self._auth: HTTPBasicAuth = HTTPBasicAuth(login, passwd)
+    def __init__(self, config):
+        self._host: str = config.url_host
+        self._auth: HTTPBasicAuth = HTTPBasicAuth(
+            config.login, config.password)
 
     def get_unread(self) -> Sequence[FeedItem]:
 

@@ -1,5 +1,3 @@
-import curses
-import curses.textpad
 import os
 
 from warnings import warn
