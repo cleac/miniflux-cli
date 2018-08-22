@@ -41,3 +41,14 @@ class MinifluxAPIManager:
             FeedItem.parse(item)
             for item in result.json()['entries']
         ]
+
+    def mark_read(self, id: int):
+
+        result = requests.put(
+            f'{self._host}/v1/entries',
+            json={'entry_ids': [id], 'status': 'read'},
+            auth=self._auth)
+
+        if result.status_code != requests.codes.no_content and \
+                result.status_code != requests.codes.ok:
+            raise _determine_error_on_code(result.status_code)(result.status_code)

@@ -1,5 +1,7 @@
 import curses
+import curses.textpad
 import os
+import subprocess
 from warnings import warn
 
 from typing import Sequence
@@ -52,6 +54,8 @@ class FeedContext:
 
         self._screen_params = 0, 0
 
+        self._run_editor = False
+
     def view(self, screen):
         self._screen_params = height, width = screen.getmaxyx()
 
@@ -69,9 +73,9 @@ class FeedContext:
         screen.refresh()
 
     def move_down(self, count=1):
-        self._selected = min(self._selected + count, len(self.feed_list) - 2)
+        self._selected = min(self._selected + count, len(self.feed_list) - 1)
 
-        while self._screen_params[0] + self._first_visible - 2 < self._selected:
+        while self._screen_params[0] + self._first_visible-2 < self._selected:
             self._first_visible += 1
 
     def move_up(self, count=1):
@@ -80,11 +84,13 @@ class FeedContext:
         while self._first_visible > self._selected:
             self._first_visible -= 1
 
-    def open(self, url, command='xdg-open'):
+    def open(self, feed_item, command='xdg-open'):
         try:
-            os.system(f'{command} {url}')
+            os.spawnvp.call(os.P_NOWAIT, command, [feed_item.url])
         except Exception:
             warn('You are runnig in container or don\'t have a command')
+        self._api.mark_read(feed_item.id)
+        self.feed_list = self._api.get_unread()
 
     def handle_keypress(self, key):
         if key == curses.KEY_DOWN or chr(key) == 'j':
@@ -94,6 +100,9 @@ class FeedContext:
             self.move_up()
             return True
         elif key == curses.KEY_ENTER or chr(key) == 'o':
-            self.open(self.feed_list[self._selected].url)
+            self.open(self.feed_list[self._selected])
+            return True
+        elif chr(key) == 'r':
+            self.feed_list = self._api.get_unread()
             return True
         return False
