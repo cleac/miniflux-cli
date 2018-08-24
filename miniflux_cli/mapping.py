@@ -1,4 +1,4 @@
-from .meta.mapping import DClass
+from miniflux_cli.meta.mapping import DClass
 
 
 class FeedItem(DClass):

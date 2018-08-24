@@ -1,0 +1,3 @@
+v0.0.2
+
+- Optimize rendering process for it to invoke re-render only when needed

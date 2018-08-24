@@ -76,8 +76,6 @@ class Pause:
         self.app = app
 
     def __enter__(self):
-        self.app._pause = True
-
         self.app._scr.nodelay(False)
         self.app._scr.keypad(False)
 
@@ -86,8 +84,6 @@ class Pause:
         curses.endwin()
 
     def __exit__(self, t, s, d):
-        self.app._pause = False
-
         self.app._scr = curses.initscr()
 
         curses.noecho()
@@ -98,12 +94,29 @@ class Pause:
         self.app._scr.nodelay(True)
 
 
-class App(InitCursesMixin, ContextHandlerMixin, SRCHandlerMixin):
+class WatchTermSizeMixin:
+    def __init__(self):
+        super().__init__()
+        self._window_size = (None, None)
+
+    def is_window_size_changed(self):
+        if self._window_size != self._scr.getmaxyx():
+            self._window_size = self._scr.getmaxyx()
+            return True
+        self._window_size = self._scr.getmaxyx()
+        return False
+
+
+class App(
+    InitCursesMixin,
+    WatchTermSizeMixin,
+    ContextHandlerMixin,
+    SRCHandlerMixin,
+):
 
     def __init__(self):
         super().__init__()
         self._exit = False
-        self._pause = False
 
     def __enter__(self):
         self._init_contexts()
@@ -112,10 +125,14 @@ class App(InitCursesMixin, ContextHandlerMixin, SRCHandlerMixin):
     def loop(self):
         current_context = self.get_default_context()
 
+        # In case context does not have request_update and it renders
+        # all the time it should not fail
+        getattr(current_context, 'request_update', lambda: None)()
+
         while True:
-            if self._pause:
-                time.sleep(.5)
-                continue
+
+            if self.is_window_size_changed():
+                getattr(current_context, 'request_update', lambda: None)()
 
             current_context.view(self._scr)
 

@@ -18,6 +18,10 @@ class ListView:
         self._screen_params = 0, 0
 
     def view(self, screen):
+        if not self._update:
+            return
+
+        self._update = False
         self._screen_params = height, width = screen.getmaxyx()
 
         screen.clear()
@@ -59,12 +63,17 @@ class ListView:
     def open(self, item):
         raise NotImplementedError
 
+    def request_update(self):
+        self._update = True
+
     def handle_keypress(self, key):
         if key == curses.KEY_DOWN or chr(key) == 'j':
             self.move_down()
+            self.request_update()
             return True
         elif key == curses.KEY_UP or chr(key) == 'k':
             self.move_up()
+            self.request_update()
             return True
         elif (
             key == curses.KEY_ENTER or key == 10 or

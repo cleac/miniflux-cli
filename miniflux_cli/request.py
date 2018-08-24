@@ -4,7 +4,7 @@ import requests
 
 from requests.auth import HTTPBasicAuth
 
-from .mapping import FeedItem
+from miniflux_cli.mapping import FeedItem
 
 APIError = type('APIError', (Exception,), {})
 

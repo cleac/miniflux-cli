@@ -4,8 +4,8 @@ from warnings import warn
 
 from typing import Sequence
 
-from miniflux.mapping import FeedItem, Feed
-from miniflux.meta.tui import elipsize, ListView
+from miniflux_cli.mapping import FeedItem, Feed
+from miniflux_cli.meta.tui import elipsize, ListView
 
 
 def render_feed_list(feed_list: Sequence[FeedItem], display_width):
@@ -74,9 +74,11 @@ class FeedContext(ListView):
         try:
             if chr(key) == 'r':
                 self.feed_list = self._api.get_unread()
+                self.request_update()
                 return True
             elif chr(key) == 'd':
                 self.mark_read(self.get_current())
+                self.request_update()
                 return True
             elif chr(key) == 'O':
                 self.open_alternative(self.get_current())

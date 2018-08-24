@@ -3,7 +3,7 @@ import os
 
 from getpass import getpass
 
-from miniflux.meta.mapping import DClass
+from miniflux_cli.meta.mapping import DClass
 
 CONFIG_DIR = os.path.join(os.getenv('HOME') + '/.config/')
 

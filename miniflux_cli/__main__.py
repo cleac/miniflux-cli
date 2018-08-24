@@ -1,14 +1,14 @@
 import sys
 import os
 
-from miniflux.request import (
+from miniflux_cli.request import (
     MinifluxAPIManager,
     APIInvalidAuthError,
     APINotFoundError,
 )
-from miniflux.app import App, Pause
-from .contexts.feed import FeedContext
-from .config import Config
+from miniflux_cli.app import App, Pause
+from miniflux_cli.contexts.feed import FeedContext
+from miniflux_cli.config import Config
 
 HELP = """
 miniflux-cli
