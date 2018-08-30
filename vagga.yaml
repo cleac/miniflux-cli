@@ -1,14 +1,21 @@
 containers:
-  flake8:
+  linters:
     setup:
       - !Alpine v3.8
       - !PipConfig { dependencies: true }
       - !Py3Install
         - flake8==3.5.0
+        - mypy
 
 commands:
   flake8: !Command
-    container: flake8
+    container: linters
     accepts_arguments: true
     description: Run flake8
     run: [flake8]
+
+  mypy: !Command
+    container: linters
+    accepts_arguments: true
+    description: Run mypy
+    run: [mypy]

@@ -24,14 +24,15 @@ class ListView:
         self._update = False
         self._screen_params = height, width = screen.getmaxyx()
 
-        screen.clear()
-
-        for i, feed_item in enumerate(self.render_function(
+        display_data = self.render_function(
             self.data_source()[
                 self._first_visible:
                 height + self._first_visible-1],
-            width
-        )):
+            width)
+
+        screen.clear()
+
+        for i, feed_item in enumerate(display_data):
             if i == self._selected - self._first_visible:
                 screen.addstr(feed_item, curses.A_REVERSE)
             else:
