@@ -30,7 +30,7 @@ class FeedContext(ListView):
 
     def __init__(self, app):
         super().__init__(app)
-        self._api = app.acquire_src('miniflux_api')
+        self._api = app.acquire_src('api')
         self.config = app.acquire_src('config')
         self.pause = app.acquire_src('pause')
 
@@ -50,7 +50,6 @@ class FeedContext(ListView):
                 os.system(f'{self.config.open_command} {feed_item.url}')
             except Exception:
                 warn('Command not found')
-        self._api.mark_read(feed_item.id)
         self.feed_list = self._api.get_unread()
 
     def open_alternative(self, feed_item):
@@ -65,7 +64,7 @@ class FeedContext(ListView):
     def mark_read(self, feed_item):
         self._api.mark_read(feed_item.id)
         self.feed_list = self._api.get_unread()
-        self.move_up(1)
+        self.move_up(0)
 
     def handle_keypress(self, key):
         if super().handle_keypress(key):
@@ -82,6 +81,16 @@ class FeedContext(ListView):
                 return True
             elif chr(key) == 'O':
                 self.open_alternative(self.get_current())
+                self.request_update()
+                return True
+            elif chr(key) == 'G':
+                self.move_down(len(self.data_source()))
+                self.request_update()
+                return True
+            elif chr(key) == 'g':
+                self.move_up(len(self.data_source()))
+                self.request_update()
+                return True
         except Exception:
             pass
 

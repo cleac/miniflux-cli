@@ -1,81 +1,79 @@
+from typing import NamedTuple, Optional, Mapping, Any
+
 import json
 import os
 
 from getpass import getpass
 
-from miniflux_cli.meta.mapping import DClass
-
-CONFIG_DIR = os.path.join(os.getenv('HOME') + '/.config/')
+CONFIG_FILE = os.path.join(os.getenv('HOME') + '/.config/miniflux.json')
 
 
-class Config(DClass):
+class Config(NamedTuple):
 
     url_host: str
     login: str
-    password: str
+    password: Optional[str]
 
-    remember_login: bool
-    remember_password: bool
+    remember_password: Optional[bool]
+
+    alternative_open_command: Optional[str]
 
     open_command: str = 'xdg-open'
-    alternative_open_command: str
 
-    @classmethod
-    def load_config(cls):
-        try:
-            with open(CONFIG_DIR + 'miniflux.json', 'r') as f:
-                return cls(**json.loads(f.read()))
-        except FileNotFoundError:
-            return cls()
 
-    def fill_keys(self):
-        if not self.url_host:
-            self.url_host = input('Please, enter url: ')
+def load():
+    try:
+        with open(CONFIG_FILE, 'r') as f:
+            return Config(**json.loads(f.read()))
+    except FileNotFoundError:
+        with open(CONFIG_FILE, 'w') as f:
+            f.write('{}')
+    except TypeError:
+        pass
+    return Config(**read_initial_config())
 
-        if not self.login:
-            self.login = input('Please, enter login: ')
-            while self.remember_login is None:
-                remember = input('Do you want to remember it? [yN] ')
-                if 'y' in remember.lower():
-                    self.remember_login = True
-                elif not remember or 'n' in remember.lower():
-                    self.remember_login = False
 
-        if not self.password:
-            self.password = getpass('Please, enter password: ')
-            while self.remember_password is None:
-                remember = input(
-                    'Do you want to remember it? '
-                    '(Note: it is stored as plaintext) [yN] ')
-                if 'y' in remember.lower():
-                    self.remember_password = True
-                elif not remember or 'n' in remember.lower():
-                    self.remember_password = False
+def read_initial_config() -> Mapping[str, Any]:
+    with open(CONFIG_FILE, 'r') as f:
+        config = json.loads(f.read())
 
-        return self
+    if 'url_host' not in config:
+        config['url_host'] = input('Please, enter url: ')
 
-    def save(self):
-        result = self.dict
+    if 'login' not in config:
+        config['login'] = input('Please, enter login: ')
 
-        # Cleanup "remember" items
-        if result['login'] and result['remember_login']:
-            result['remember_login'] = None
-        if result['password'] and result['remember_password']:
-            result['remember_password'] = None
+    if 'password' not in config:
+        config['password'] = getpass('Please, enter password: ')
+        while 'remember_password' not in config:
+            remember = input(
+                'Do you want to remember it? '
+                '(Note: it is stored as plaintext) [yN] ')
+            if 'y' in remember.lower():
+                config['remember_password'] = True
+            elif not remember or 'n' in remember.lower():
+                config['remember_password'] = False
 
-        if result['remember_login'] is False and result['login']:
-            result['login'] = None
-        if result['remember_password'] is False and result['password']:
-            result['password'] = None
+    return config
 
-        # Cleanup empty keys
-        remove_keys = set()
-        for key in result.keys():
-            if result[key] is None:
-                remove_keys.add(key)
-        for key in remove_keys:
-            del result[key]
 
-        # Write to file and dumps
-        with open(CONFIG_DIR + 'miniflux.json', 'w') as f:
-            f.write(json.dumps(result, ensure_ascii=False))
+def save(config: Config):
+    result = dict(config._asdict())
+
+    # Set "remember" password to None
+    if result['password'] and result['remember_password']:
+        result['remember_password'] = None
+    if result['remember_password'] is False and result['password']:
+        result['password'] = None
+
+    # Cleanup empty keys
+    remove_keys = set()
+    for key in result.keys():
+        if result[key] is None:
+            remove_keys.add(key)
+    for key in remove_keys:
+        del result[key]
+
+    # Write to file and dumps
+    with open(CONFIG_FILE, 'w') as f:
+        f.write(json.dumps(result, ensure_ascii=False))

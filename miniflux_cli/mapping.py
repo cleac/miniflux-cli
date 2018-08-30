@@ -1,42 +1,76 @@
-from miniflux_cli.meta.mapping import DClass
+from typing import NamedTuple, Optional, Dict, Any, Callable
 
 
-class FeedItem(DClass):
+db_storage = {}
+
+
+def load(cls: type, id: int) -> Optional[NamedTuple]:
+    if not hasattr(cls, '_storage'):
+        cls._storage = {}
+    return cls._storage.get(id, None)
+
+
+def save(cls: type, id: int, item: NamedTuple) -> NamedTuple:
+    if not hasattr(cls, '_storage'):
+        cls._storage = {}
+    cls._storage[id] = item
+    return item
+
+
+def get_obj_acquirer(
+    obj: Dict[str, Any],
+    prev: Optional[NamedTuple],
+) -> Callable[[str], Any]:
+    return lambda key: obj.get(key, getattr(prev, key, None))
+
+
+class FeedItem(NamedTuple):
     id: int
     feed_id: int
     title: str
-    content: str
+    content: Optional[str]
     url: str
 
     @classmethod
-    def parse(cls, obj):
-        feed_item = super().parse(obj)
-        feed_item.title = obj.get('title', feed_item.title)
-        feed_item.content = obj.get('content', feed_item.content)
-        feed_item.url = obj.get('url', feed_item.url)
-        feed_item.feed_id = Feed.parse(obj['feed']).id
-        return feed_item
+    def parse(cls, obj: Dict[str, Any]) -> NamedTuple:
+        feed_item = {'id': obj['id']}
+        prev_value = load(cls, obj['id'])
+
+        acquire = get_obj_acquirer(obj, prev_value)
+        feed_item['title'] = acquire('title')
+        feed_item['content'] = acquire('content')
+        feed_item['url'] = acquire('url')
+        feed_item['feed_id'] = Feed.parse(obj['feed']).id
+        return save(cls, feed_item['id'], cls(**feed_item))
 
 
-class Category(DClass):
+class Category(NamedTuple):
     id: int
     title: str
 
     @classmethod
-    def parse(cls, obj):
-        category = super().parse(obj)
-        category.title = obj.get('title', category.title)
-        return category
+    def parse(cls, obj: Dict[str, Any]) -> NamedTuple:
+        itm_id = obj['id']
+        category = {'id': itm_id}
+        prev = load(cls, itm_id)
+
+        acquire = get_obj_acquirer(obj, prev)
+        category['title'] = acquire('title')
+        return save(cls, itm_id, cls(**category))
 
 
-class Feed(DClass):
+class Feed(NamedTuple):
     id: int
     title: str
     category_id: int
 
     @classmethod
-    def parse(cls, obj):
-        feed = super().parse(obj)
-        feed.title = obj.get('title', feed.title)
-        feed.category_id = Category.parse(obj['category']).id
-        return feed
+    def parse(cls, obj: Dict[str, Any]) -> NamedTuple:
+        itm_id = obj['id']
+        feed = {'id': itm_id}
+        prev = load(cls, itm_id)
+
+        acquire = get_obj_acquirer(obj, prev)
+        feed['title'] = acquire('title')
+        feed['category_id'] = Category.parse(obj['category']).id
+        return save(cls, itm_id, cls(**feed))

@@ -42,14 +42,15 @@ class ListView:
     def move_down(self, count=1):
         self._selected = min(self._selected + count, len(self.feed_list) - 1)
 
-        while self._screen_params[0] + self._first_visible-2 < self._selected:
-            self._first_visible += 1
+        screen_height = self._screen_params[0]
+        if self._first_visible + screen_height - 2 < self._selected:
+            self._first_visible += 2 + self._selected - screen_height
 
     def move_up(self, count=1):
         self._selected = max(self._selected - count, 0)
 
-        while self._first_visible > self._selected:
-            self._first_visible -= 1
+        if self._first_visible > self._selected:
+            self._first_visible = self._selected
 
     def get_current(self):
         return self.data_source()[self._selected]

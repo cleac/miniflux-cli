@@ -1,6 +1,8 @@
 import sys
 import os
 
+from miniflux_cli import config
+
 from miniflux_cli.request import (
     MinifluxAPIManager,
     APIInvalidAuthError,
@@ -8,7 +10,6 @@ from miniflux_cli.request import (
 )
 from miniflux_cli.app import App, Pause
 from miniflux_cli.contexts.feed import FeedContext
-from miniflux_cli.config import Config
 
 HELP = """
 miniflux-cli
@@ -72,10 +73,9 @@ def main():
     try:
         fail_connection = True
         while fail_connection:
-            config = Config.load_config() \
-                .fill_keys()
+            cfg = config.load()
 
-            api = MinifluxAPIManager(config)
+            api = MinifluxAPIManager(cfg)
 
             try:
                 api.get_unread()
@@ -88,12 +88,13 @@ def main():
                 exit(2)
 
             fail_connection = False
-        config.save()
+
+        config.save(cfg)
 
         app = App()
 
-        app.register_src('miniflux_api', api)
-        app.register_src('config', config)
+        app.register_src('api', api)
+        app.register_src('config', cfg)
         app.register_src('pause', Pause(app))
 
         app.register_context('feed_view', FeedContext)
