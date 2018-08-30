@@ -53,6 +53,8 @@ class FeedContext(ListView):
         self.feed_list = self._api.get_unread()
 
     def open_alternative(self, feed_item):
+        if not self.config.alternative_open_command:
+            return
         with self.pause:
             try:
                 os.system(

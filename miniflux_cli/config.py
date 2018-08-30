@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Mapping, Any
+from typing import NamedTuple, Optional, Dict, Any
 
 import json
 import os
@@ -16,15 +16,26 @@ class Config(NamedTuple):
 
     remember_password: Optional[bool]
 
-    alternative_open_command: Optional[str]
-
     open_command: str = 'xdg-open'
+    alternative_open_command: Optional[str] = None
+
+
+def migrate_config(obj: Dict[str, Any]) -> Dict[str, Any]:
+    if 'remember_login' in obj:
+        del obj['remember_login']
+    return obj
+
+
+def read_data_from_file() -> Dict[str, Any]:
+    with open(CONFIG_FILE, 'r') as f:
+        return json.loads(f.read())
 
 
 def load():
     try:
         with open(CONFIG_FILE, 'r') as f:
-            return Config(**json.loads(f.read()))
+            return Config(
+                migrate_config(read_data_from_file()))
     except FileNotFoundError:
         with open(CONFIG_FILE, 'w') as f:
             f.write('{}')
@@ -33,9 +44,8 @@ def load():
     return Config(**read_initial_config())
 
 
-def read_initial_config() -> Mapping[str, Any]:
-    with open(CONFIG_FILE, 'r') as f:
-        config = json.loads(f.read())
+def read_initial_config() -> Dict[str, Any]:
+    config = read_data_from_file()
 
     if 'url_host' not in config:
         config['url_host'] = input('Please, enter url: ')
@@ -54,7 +64,7 @@ def read_initial_config() -> Mapping[str, Any]:
             elif not remember or 'n' in remember.lower():
                 config['remember_password'] = False
 
-    return config
+    return migrate_config(config)
 
 
 def save(config: Config):
