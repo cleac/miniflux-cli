@@ -1,4 +1,4 @@
-# miniflux-cli
+# miniflux-cli [unmaintained]
 
 A small application aimed to allow to read feeds gained by Miniflux2 from a terminal without any browser. Has pretty
 not much possibilities yet, but looking through list of articles and removing irrelevant works just fine.
